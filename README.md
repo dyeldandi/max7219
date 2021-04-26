@@ -102,7 +102,7 @@ In that case you can either replace the diode with 0Ohm 1206 SMD resistor on all
 
 Or you can replace the diodes with a 0Ohm resistor on all the modules, including the first one, but in that case you'll need to replace the 0805 10KOhm current setting resistor with something like 20KOhm, otherwise MAX7219 will soon overheat and shut down.
 
-# Use hardware SPI
+## Use hardware SPI
 
 Uncomment 
 ```
