@@ -96,7 +96,11 @@ Use DisplayText and DisplayChar like you have a longer display
   max7219.DisplayChar(11, 'b', 0);
 ```
 
-If you are using modules like on the image above, which can be found on Banggood, Aliexpress, etc, you may find that they have a reverse voltage protection diode right after input VCC, and output VCC is behind this diode. This means you'll see a voltage drop on output VCC and it won't be enough to power consequent modules. In that case you can either replace the diode with 0Ohm 1206 SMD resistor on all the modules starting from the second and keep the diode on first. But if you connect many modules the current across that diode may get too high. In that case you'll need to replace the diodes with a 0Ohm resistor on all the modules, including the first one, but in that case you'll need to replace the 0805 10KOhm current setting resistor with something like 20KOhm, otherwise MAX7219 will soon overheat and shut down.
+If you are using modules like on the image above, which can be found on Banggood, Aliexpress, etc, you may find that they have a reverse voltage protection diode right after input VCC, and output VCC is behind this diode. This means you'll see a voltage drop on output VCC and it won't be enough to power consequent modules. 
+
+In that case you can either replace the diode with 0Ohm 1206 SMD resistor on all the modules starting from the second and keep the diode on first. But if you connect many modules the current across that diode may get too high. 
+
+Or you can replace the diodes with a 0Ohm resistor on all the modules, including the first one, but in that case you'll need to replace the 0805 10KOhm current setting resistor with something like 20KOhm, otherwise MAX7219 will soon overheat and shut down.
 
 # Use hardware SPI
 
@@ -105,7 +109,8 @@ Uncomment
 //#define MAX7219_USE_SPI 1
 ```
 in max7219.h and connect your MAX7219 to SPI pins:
-MAX7219 CLK to Arduino SCK
-MAX7219 DIN to Arduino MOSI
-MAX7219 LOAD(CS) to Arduino any unused pin and change MAX_CS in max7219.h
+
+* MAX7219 CLK to Arduino SCK
+* MAX7219 DIN to Arduino MOSI
+* MAX7219 LOAD(CS) to Arduino any unused pin and change MAX_CS in max7219.h
 
