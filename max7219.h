@@ -44,12 +44,16 @@
 #define REG_SCAN_LIMIT    0x0b                       
 #define REG_SHUTDOWN      0x0c                      
 #define REG_DISPLAY_TEST  0x0f                       
+#define REG_NOOP          0x00
+#define NOOP_NODATA       0x00
 
 #define INTENSITY_MIN     0x00                       
 #define INTENSITY_MAX     0x0f                      
 #define MAX_CLK 10
 #define MAX_CS 11
 #define MAX_DIN 12
+
+//#define MAX7219_USE_SPI 1
 
 /*
 *********************************************************************************************************
@@ -98,15 +102,17 @@ static const struct {
 class MAX7219
 {
 private:
-
+  uint8_t daisyCount;
 public: 
   MAX7219(void);
+  MAX7219(uint8_t);
   void Begin(void);
   void DisplayChar (char digit, char character, unsigned int dp);  
   void MAX7219_DisplayTestStart (void);
   void DisplayChar(int digit, char value, bool dp);
   void clearDisplay();
   void MAX7219_Write(volatile byte opcode, volatile byte data);
+  void MAX7219_Write(volatile byte opcode, volatile byte data, uint8_t);
   void MAX7219_ShutdownStop (void);
   unsigned char MAX7219_LookupCode (char character, unsigned int dp);
   void MAX7219_ShutdownStart (void);

@@ -24,7 +24,7 @@
 ********************************************************************************
 *
 * Module     : max7219.cpp
-* Author     : Jonathan Evans
+* Author     : Jonathan Evans, Denis Yeldandi
 * Description: MAX7219 LED Display Driver
 *
 * The MAX7219/MAX7221 are compact, serial input/output common-cathode display drivers that interface
@@ -35,10 +35,11 @@
 * Library Description
 *
 *  - This library implements the 7-segment numeric LED display of 8 digits 
+*  - This library supports daisy-chaining multiple MAX7219
 *  - The host communicates with the MAX7219 using three signals: CLK (pin 10), CS (pin 11), DIN (pin 12). 
 *  - Pins can be configured in max7219.h
 *  - The MAX7219 is a SPI interface
-*  - This library uses the bitbang method for communication with the MAX7219 
+*  - This library uses the bitbang method for communication with the MAX7219 or built-in SPI
 *
 * Usage
 *
@@ -56,17 +57,32 @@
 */
 
 #include "max7219.h"
+#ifdef MAX7219_USE_SPI
+#include "SPI.h"
+#endif
 
-MAX7219:: MAX7219(void)
+MAX7219:: MAX7219(void):daisyCount(1)
 {
+#ifndef MAX7219_USE_SPI
   pinMode(MAX_DIN, OUTPUT);
-  pinMode(MAX_CS, OUTPUT);
   pinMode(MAX_CLK, OUTPUT);
+#endif
+  pinMode(MAX_CS, OUTPUT);
 }
+
+MAX7219:: MAX7219(uint8_t daisyCount):daisyCount(daisyCount)
+{
+#ifndef MAX7219_USE_SPI
+  pinMode(MAX_DIN, OUTPUT);
+  pinMode(MAX_CLK, OUTPUT);
+#endif
+  pinMode(MAX_CS, OUTPUT);
+}
+
 
 void MAX7219::MAX7219_ShutdownStart (void)
 {
-  MAX7219_Write(REG_SHUTDOWN, 0);                     
+  MAX7219_Write(REG_SHUTDOWN, 0);
 }
 
 void MAX7219:: MAX7219_DisplayTestStart (void)
@@ -76,8 +92,8 @@ void MAX7219:: MAX7219_DisplayTestStart (void)
 
 void MAX7219::Clear(void) {
     
-    for(int i=0;i<8;i++) {
-        MAX7219_Write(i+1,0x00);
+    for(int i=0;i<8*daisyCount;i++) {
+        MAX7219_Write(i+1, 0x00);
     }
 }
 
@@ -116,6 +132,9 @@ unsigned char MAX7219::MAX7219_LookupCode (char character, unsigned int dp)
   return 0;                                             
 }
 
+/*
+ * This one is still broken. E.g. when text starts with . we'll get a negative offset
+ */
 void MAX7219::DisplayText(char *text, int justify){
   int decimal[16];
   char trimStr[16] = "";
@@ -146,14 +165,60 @@ void MAX7219::DisplayText(char *text, int justify){
 }
 
 void MAX7219::MAX7219_Write(volatile byte opcode, volatile byte data) {
+    int i=0;
     digitalWrite(MAX_CS,LOW);
-    shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,opcode);
-    shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,data);
+    for (i=0; i<daisyCount; i++) {
+#ifdef MAX7219_USE_SPI
+      SPI.transfer(opcode);
+      SPI.transfer(data);
+#else
+      shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,opcode);
+      shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,data);
+#endif
+    }
     digitalWrite(MAX_CS,HIGH);
 }    
 
+void MAX7219::MAX7219_Write(volatile byte opcode, volatile byte data, uint8_t daisyNum) {
+    int i=0;
+    digitalWrite(MAX_CS,LOW);
+#ifdef MAX7219_USE_SPI
+    SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));
+#endif
+    for (i=0; i<daisyNum; i++) {
+#ifdef MAX7219_USE_SPI
+      SPI.transfer(REG_NOOP);
+      SPI.transfer(NOOP_NODATA);
+#else
+      shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,REG_NOOP);
+      shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,NOOP_NODATA);
+#endif
+    }
+#ifdef MAX7219_USE_SPI
+    SPI.transfer(opcode);
+    SPI.transfer(data);
+#else
+    shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,opcode);
+    shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,data);
+#endif
+    for (i=daisyNum+1; i<daisyCount; i++) {
+#ifdef MAX7219_USE_SPI
+      SPI.transfer(REG_NOOP);
+      SPI.transfer(NOOP_NODATA);
+#else
+      shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,REG_NOOP);
+      shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,NOOP_NODATA);
+#endif
+    }
+#ifdef MAX7219_USE_SPI
+    SPI.endTransaction();
+#endif
+    digitalWrite(MAX_CS,HIGH);
+}    
+
+
 void MAX7219::DisplayChar(int digit, char value, bool dp) {
-      MAX7219_Write(digit+1,MAX7219_LookupCode(value, dp));
+      MAX7219_Write((digit%8)+1, MAX7219_LookupCode(value, dp), digit/8);
 }
 
 void MAX7219::MAX7219_ShutdownStop (void)
@@ -162,7 +227,10 @@ void MAX7219::MAX7219_ShutdownStop (void)
 }
  
 void MAX7219::Begin()
-{ 
+{
+#ifdef MAX7219_USE_SPI
+  SPI.begin();
+#endif 
   digitalWrite(MAX_CS,HIGH);
   MAX7219_Write(REG_SCAN_LIMIT, 7);                   
   MAX7219_Write(REG_DECODE, 0x00);                    
