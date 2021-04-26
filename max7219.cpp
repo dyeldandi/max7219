@@ -53,7 +53,7 @@
 *  This method displays a single value (character) in position DIGIT (0=right most digit, 7=left most digit)
 *  
 *  3. DisplayText(Text, Justify)
-*  This method displays a text string (Text) either right justified (Justify=0) or left justified (Justify=1) 
+*  This method displays a text string (Text) either right justified (Justify=MAX7219_JUSTIFY_RIGHT=0) or left justified (Justify=MAX7219_JUSTIFY_LEFT=1) 
 */
 
 #include "max7219.h"
@@ -132,36 +132,82 @@ unsigned char MAX7219::MAX7219_LookupCode (char character, unsigned int dp)
   return 0;                                             
 }
 
-/*
- * This one is still broken. E.g. when text starts with . we'll get a negative offset
+/* Calculates text length in digits, trying to merge dots with previous chracter.
+ * if dot appears alone, without a character before it, or multiple dots appear, we'll
+ * insert an empty space before them 
  */
-void MAX7219::DisplayText(char *text, int justify){
-  int decimal[16];
-  char trimStr[16] = "";
-  int x,y=0;
-  int s;
-  
-  s=strlen(text);
-  if (s>16) s=16;
-  for (x=0;x<s;x++){
-    if (text[x]=='.'){
-      decimal[y-1]=1;
-      }
-    else{
-      trimStr[y]=text[x];
-      decimal[y]=0;
-      y++;
-     }
-  }
-  if (y>8) y=8;
-  for (x=0;x<y;x++){
-      if (justify==0)
-        DisplayChar((int)(y-x+7-y),trimStr[x], decimal[x]);    
-      if (justify==1){
-        DisplayChar((int)(y-x+7-y-(8-y)),trimStr[x], decimal[x]);    
-        
-      }
-  }
+static size_t MAX7219::StrLen(char *text) {
+	size_t ret = 0;
+	uint8_t charFound = 0;
+	for(char *c = text; *c; c++) {
+		if (*c == '.') {
+			if (charFound) {
+				charFound = 0;
+			} else {
+				ret++;
+			}
+		} else {
+			charFound = 1;
+			ret++;
+		}
+	}
+	return ret;
+}
+
+/* Returns a pointer to Nth character considering dots 
+ */
+static char* MAX7219::StrOffset(char *text, size_t offset) {
+	size_t count = 0;
+	uint8_t charFound = 0;
+	char *c;
+	for(c = text; *c; c++) {
+		if (*c == '.') {
+			if (charFound) {
+				charFound = 0;
+			} else {
+				if (count == offset) break;
+				count++;
+			}
+		} else {
+			charFound = 1;
+			if (count == offset) break;
+			count++;
+		}
+	}
+	return c;
+}
+
+void MAX7219::DisplayText(char *text, int justify) {
+	uint8_t charFound = 0;
+	unsigned int s = StrLen(text);
+
+	char *start = text;
+	int digit = 0;
+	if (justify == MAX7219_JUSTIFY_RIGHT) { //right
+		if (s <= 8 * daisyCount) {
+			digit = 8 * daisyCount - s;
+		} else {
+			start = StrOffset(text, s - 8 * daisyCount);
+		}
+	}
+
+	for (; *start; start++) {
+		if (*start = '.') {
+			if (charFound) {
+				charFound = 0;
+			} else {
+				displayChar((8*daisyCount)-digit++, ' ', 1);
+			}
+		} else {
+			charFound = 1;
+			if (*(start+1) == '.') {
+				displayChar((8*daisyCount)-digit++, *start, 1);
+			} else {
+				displayChar((8*daisyCount)-digit++, *start, 0);
+			}
+		}
+		if (digit >= 8 * daisyCount) break;
+	}
 }
 
 void MAX7219::MAX7219_Write(volatile byte opcode, volatile byte data) {

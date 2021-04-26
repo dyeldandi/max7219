@@ -39,21 +39,27 @@
 #endif
 
 //MAX7219
-#define REG_DECODE        0x09                        
-#define REG_INTENSITY     0x0a                       
-#define REG_SCAN_LIMIT    0x0b                       
-#define REG_SHUTDOWN      0x0c                      
-#define REG_DISPLAY_TEST  0x0f                       
+#define REG_DECODE        0x09
+#define REG_INTENSITY     0x0a
+#define REG_SCAN_LIMIT    0x0b
+#define REG_SHUTDOWN      0x0c
+#define REG_DISPLAY_TEST  0x0f
 #define REG_NOOP          0x00
 #define NOOP_NODATA       0x00
 
-#define INTENSITY_MIN     0x00                       
-#define INTENSITY_MAX     0x0f                      
-#define MAX_CLK 10
-#define MAX_CS 11
-#define MAX_DIN 12
+#define INTENSITY_MIN     0x00
+#define INTENSITY_MAX     0x0f
+#define MAX7219_JUSTIFY_RIGHT 0
+#define MAX7219_JUSTIFY_LEFT  1
 
 //#define MAX7219_USE_SPI 1
+
+#ifdef MAX7219_USE_SPI
+#define MAX_CLK 10
+#define MAX_DIN 12
+#endif
+#define MAX_CS 11
+
 
 /*
 *********************************************************************************************************

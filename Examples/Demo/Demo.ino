@@ -13,10 +13,10 @@ void loop() {
   int y;
 
   //DisplayText Demo
-  max7219.DisplayText("95.67F", 1); //Right justified
+  max7219.DisplayText("95.67F", MAX7219_JUSTIFY_RIGHT); //Right justified
   delay(3000);
   max7219.Clear();
-  max7219.DisplayText("95.67F", 0); //Left justified
+  max7219.DisplayText("95.67F", MAX7219_JUSTIFY_LEFT); //Left justified
   delay(3000);
   max7219.Clear();
 
@@ -25,7 +25,7 @@ void loop() {
   for (float x = 0; x < 1; x = x + 0.1) {
     temp = String(x);
     temp.toCharArray(temp2, temp.length());
-    max7219.DisplayText(temp2, 1); //0=left justify 1=right justify
+    max7219.DisplayText(temp2, MAX7219_JUSTIFY_RIGHT);
     Serial.println(x);
     delay(500);
   }
@@ -33,7 +33,7 @@ void loop() {
   for (float x = 0; x < 500; x++) {
     temp = String(x);
     temp.toCharArray(temp2, temp.length());
-    max7219.DisplayText(temp2, 1); //0=left justify 1=right justify
+    max7219.DisplayText(temp2, MAX7219_JUSTIFY_RIGHT);
     Serial.println(x);
   }
   delay(500);
