@@ -23,7 +23,7 @@
 *********************************************************************************
 *
 * Module     : max7219.h
-* Author     : Jonathan Evans
+* Author     : Jonathan Evans, Denis Yeldandi
 * Description: MAX7219 LED Display Driver
 *
 ********************************************************************************
