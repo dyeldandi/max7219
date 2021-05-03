@@ -44,7 +44,7 @@ void loop() {
   max7219.DisplayChar(11, 'b', 0);
   max7219.DisplayChar(12, 'c', 0);
   max7219.DisplayChar(13, 'd', 0);
-  max7219.DisplayChar(14, 'R', 0);
+  max7219.DisplayChar(14, 'E', 0);
   max7219.DisplayChar(15, 'F', 0);
   delay(1000);
 }

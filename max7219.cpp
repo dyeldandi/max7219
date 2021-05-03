@@ -92,7 +92,7 @@ void MAX7219:: MAX7219_DisplayTestStart (void)
 
 void MAX7219::Clear(void) {
     
-    for(int i=0;i<8*daisyCount;i++) {
+    for(int i=0;i<8;i++) {
         MAX7219_Write(i+1, 0x00);
     }
 }
@@ -136,10 +136,10 @@ unsigned char MAX7219::MAX7219_LookupCode (char character, unsigned int dp)
  * if dot appears alone, without a character before it, or multiple dots appear, we'll
  * insert an empty space before them 
  */
-static size_t MAX7219::StrLen(char *text) {
+size_t MAX7219::StrLen(const char *text) {
 	size_t ret = 0;
 	uint8_t charFound = 0;
-	for(char *c = text; *c; c++) {
+	for(const char *c = text; *c; c++) {
 		if (*c == '.') {
 			if (charFound) {
 				charFound = 0;
@@ -156,10 +156,10 @@ static size_t MAX7219::StrLen(char *text) {
 
 /* Returns a pointer to Nth character considering dots 
  */
-static char* MAX7219::StrOffset(char *text, size_t offset) {
+char* MAX7219::StrOffset(const char *text, size_t offset) {
 	size_t count = 0;
 	uint8_t charFound = 0;
-	char *c;
+	const char *c;
 	for(c = text; *c; c++) {
 		if (*c == '.') {
 			if (charFound) {
@@ -174,14 +174,14 @@ static char* MAX7219::StrOffset(char *text, size_t offset) {
 			count++;
 		}
 	}
-	return c;
+	return (char*)c;
 }
 
-void MAX7219::DisplayText(char *text, int justify) {
+void MAX7219::DisplayText(const char *text, int justify) {
 	uint8_t charFound = 0;
 	unsigned int s = StrLen(text);
 
-	char *start = text;
+	const char *start = text;
 	int digit = 0;
 	if (justify == MAX7219_JUSTIFY_RIGHT) { //right
 		if (s <= 8 * daisyCount) {
@@ -190,29 +190,31 @@ void MAX7219::DisplayText(char *text, int justify) {
 			start = StrOffset(text, s - 8 * daisyCount);
 		}
 	}
-
 	for (; *start; start++) {
-		if (*start = '.') {
+		if (*start == '.') {
 			if (charFound) {
 				charFound = 0;
 			} else {
-				displayChar((8*daisyCount)-digit++, ' ', 1);
+				DisplayChar((8*daisyCount-1)-digit++, ' ', 1);
 			}
 		} else {
 			charFound = 1;
 			if (*(start+1) == '.') {
-				displayChar((8*daisyCount)-digit++, *start, 1);
+				DisplayChar((8*daisyCount-1)-digit++, *start, 1);
 			} else {
-				displayChar((8*daisyCount)-digit++, *start, 0);
+				DisplayChar((8*daisyCount-1)-digit++, *start, 0);
 			}
 		}
-		if (digit >= 8 * daisyCount) break;
+		if (digit > 8 * daisyCount) break;
 	}
 }
 
 void MAX7219::MAX7219_Write(volatile byte opcode, volatile byte data) {
     int i=0;
     digitalWrite(MAX_CS,LOW);
+#ifdef MAX7219_USE_SPI
+    SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));
+#endif
     for (i=0; i<daisyCount; i++) {
 #ifdef MAX7219_USE_SPI
       SPI.transfer(opcode);
@@ -222,6 +224,9 @@ void MAX7219::MAX7219_Write(volatile byte opcode, volatile byte data) {
       shiftOut(MAX_DIN,MAX_CLK,MSBFIRST,data);
 #endif
     }
+#ifdef MAX7219_USE_SPI
+    SPI.endTransaction();
+#endif
     digitalWrite(MAX_CS,HIGH);
 }    
 

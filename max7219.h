@@ -55,11 +55,16 @@
 //#define MAX7219_USE_SPI 1
 
 #ifdef MAX7219_USE_SPI
+#ifndef MAX_CLK
 #define MAX_CLK 10
+#endif
+#ifndef MAX_DIN
 #define MAX_DIN 12
 #endif
+#endif
+#ifndef MAX_CS
 #define MAX_CS 11
-
+#endif
 
 /*
 *********************************************************************************************************
@@ -109,6 +114,8 @@ class MAX7219
 {
 private:
   uint8_t daisyCount;
+  size_t StrLen(const char *);
+  char *StrOffset(const char *, size_t);
 public: 
   MAX7219(void);
   MAX7219(uint8_t);
@@ -125,7 +132,7 @@ public:
   void Clear (void);
   void MAX7219_DisplayTestStop (void);
   void MAX7219_SetBrightness (char brightness);
-  void DisplayText(char *text, int justify);
+  void DisplayText(const char *text, int justify);
 
 };
 
